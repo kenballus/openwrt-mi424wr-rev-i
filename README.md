@@ -27,8 +27,8 @@ TARGET_DEVICES += actiontec_mi424wr
 You should be able to follow the guide from there, and your images will be in `bin/targets/kirkwood/generic`.
 
 KNOWN BUGS:
-  Ethernet doesn't work.
-  Rebooting doesn't work.
+  * Ethernet doesn't work.
+  * Rebooting doesn't work.
   
 Both of these seem to be issues with `kirkwood-mi424wr.dts`.
 If it's clear to you what those issues are, please let me know.
