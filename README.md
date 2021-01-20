@@ -12,7 +12,7 @@ I haven't tried flashing to the NAND, but the other images should be sufficient 
 Since this router has a native telnet interface, you may have some success flashing this to the nand through something like `mtd`.
 I have not tried doing that, so if you have success with it, let me know.
 
-To build these images for yourself, follow [this guide](https://openwrt.org/docs/guide-developer/quickstart-build-images), but before you run `make meunconfig`, put `kirkwood-mi424wr.dts` in `target/linux/kirkwood/files-5.4/arch/arm/boot/dts/`, and add the following to `target/linux/kirkwood/image/Makefile` just below the last target (which is the ZyXEL NSA325, for now):
+To build these images for yourself, follow [this guide](https://openwrt.org/docs/guide-developer/quickstart-build-images), but before you run `make menuconfig`, put `kirkwood-mi424wr.dts` in `target/linux/kirkwood/files-5.4/arch/arm/boot/dts/`, and add the following to `target/linux/kirkwood/image/Makefile` just below the last target (which is the ZyXEL NSA325, for now):
 
 ```make
 define Device/actiontec_mi424wr
