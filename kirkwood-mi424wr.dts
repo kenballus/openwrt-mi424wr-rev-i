@@ -1,0 +1,712 @@
+/*
+ * Device Tree file for Actiontec MI-424WR Rev I
+ * 
+ * Copyright (c) 2021 bodhi <mibodhi@gmail.com>
+ *
+ * based on 
+ *  (c) 2015 Claudio Leite <leitec@staticky.com>
+ *
+ * based on kirkwood-ea4500.dts,
+ *   (c) 2013 Jonas Gorski <jogo@openwrt.org>
+ *   (c) 2013 Deutsche Telekom Innovation Laboratories
+ *   (c) 2014 Luka Perkov <luka@openwrt.org>
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without any
+ * warranty of any kind, whether express or implied.
+ */
+
+/dts-v1/;
+
+// SPDX-License-Identifier: GPL-2.0
+/* Copyright (c) 2021, bodhi <mibodhi@gmail.com>
+ *
+ * Based on
+ *
+ * Hack of kirkwood.dtsi to support a basic Avanta system
+ *
+ * The splits inherited from kirkwood (kirkwood.dtsi, kirkwood-XXXX.dtsi
+ * and kirkwood-board.dts) may not make any sense, since I don't know
+ * the feature differences between the Avanta SoCs.
+ *
+ * Since this is done without aid of a datasheet, things might not
+ * make any sense whatsoever.
+ *
+ *   (c) 2015 Claudio Leite <leitec@staticky.com>
+ *
+ * Values derived from Marvell GPL source release, from Actiontec MI-424WR
+ * source code,
+ *
+ *   Copyright (C) Marvell International Ltd. and its affiliates
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without any
+ * warranty of any kind, whether express or implied.
+ */
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#define MBUS_ID(target,attributes) (((target) << 24) | ((attributes) << 16))
+
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+    compatible = "marvell,kirkwood";
+    interrupt-parent = <&intc>;
+
+    cpus {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        cpu@0 {
+            device_type = "cpu";
+            compatible = "marvell,feroceon";
+            reg = <0>;
+            clocks = <&core_clk 1>, <&core_clk 3>, <&gate_clk 11>;
+            clock-names = "cpu_clk", "ddrclk", "powersave";
+        };
+    };
+
+    aliases {
+           gpio0 = &gpio0;
+           /*gpio1 = &gpio1;*/
+    };
+
+    mbus {
+        compatible = "marvell,kirkwood-mbus", "simple-bus";
+        #address-cells = <2>;
+        #size-cells = <1>;
+        /* If a board file needs to change this ranges it must replace it completely */
+        ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000 /* internal-regs */
+              MBUS_ID(0x01, 0x2f) 0 0xf4000000 0x10000  /* nand flash */
+              MBUS_ID(0x03, 0x01) 0 0xf5000000 0x10000  /* crypto sram */
+              >;
+        controller = <&mbusc>;
+        pcie-mem-aperture = <0xf3000000 0x1000000>; /* 16 MiB memory space */
+        pcie-io-aperture  = <0xf2000000 0x100000>;   /*   1 MiB    I/O space */
+
+        crypto@0301 {
+            compatible = "marvell,orion-crypto";
+            reg = <MBUS_ID(0xf0, 0x01) 0x30000 0x10000>,
+                  <MBUS_ID(0x03, 0x01) 0 0x800>;
+            reg-names = "regs", "sram";
+            interrupts = <22>;
+            clocks = <&gate_clk 17>;
+            status = "okay";
+        };
+
+        nand: nand@012f {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            cle = <0>;
+            ale = <1>;
+            bank-width = <1>;
+            compatible = "marvell,orion-nand";
+            reg = <MBUS_ID(0x01, 0x2f) 0 0x400>;
+            chip-delay = <25>;
+            /* set partition map and/or chip-delay in board dts */
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+    };
+
+    ocp@f1000000 {
+        compatible = "simple-bus";
+        ranges = <0x00000000 0xf1000000 0x0100000>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        core_clk: core-clocks@10030 {
+            compatible = "marvell,kirkwood-core-clock";
+            reg = <0x10030 0x4>;
+            #clock-cells = <1>;
+        };
+
+        spi@10600 {
+            compatible = "marvell,orion-spi";
+            #address-cells = <1>;
+            #size-cells = <0>;
+            cell-index = <0>;
+            interrupts = <19>;
+            reg = <0x10600 0x28>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        gpio0: gpio@18100 {
+            compatible = "marvell,orion-gpio";
+            #gpio-cells = <2>;
+            gpio-controller;
+            reg = <0x18100 0x40>;
+            ngpios = <32>;
+            interrupt-controller;
+            #interrupt-cells = <2>;
+            interrupts = <36>, <37>, <38>, <39>;
+            clocks = <&gate_clk 7>;
+        };
+
+/*
+        gpio1: gpio@10140 {
+            compatible = "marvell,orion-gpio";
+            #gpio-cells = <2>;
+            gpio-controller;
+            reg = <0x10140 0x40>;
+            ngpios = <18>;
+            interrupt-controller;
+            #interrupt-cells = <2>;
+            interrupts = <39>, <40>, <41>;
+            clocks = <&gate_clk 7>;
+        };
+*/
+
+        i2c@11000 {
+            compatible = "marvell,mv64xxx-i2c";
+            reg = <0x11000 0x20>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+            interrupts = <18>;
+            clock-frequency = <100000>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        serial@12000 {
+            compatible = "ns16550a";
+            reg = <0x12000 0x100>;
+            reg-shift = <2>;
+            interrupts = <33>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        serial@12100 {
+            compatible = "ns16550a";
+            reg = <0x12100 0x100>;
+            reg-shift = <2>;
+            interrupts = <34>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        mbusc: mbus-controller@20000 {
+            compatible = "marvell,mbus-controller";
+            reg = <0x20000 0x80>, <0x1500 0x20>;
+        };
+
+        bridge_intc: bridge-interrupt-ctrl@20110 {
+            compatible = "marvell,orion-bridge-intc";
+            interrupt-controller;
+            #interrupt-cells = <1>;
+            reg = <0x20110 0x8>;
+            interrupts = <1>;
+            marvell,#interrupts = <6>;
+        };
+
+        gate_clk: clock-gating-control@2011c {
+            compatible = "marvell,kirkwood-gating-clock";
+            reg = <0x2011c 0x4>;
+            clocks = <&core_clk 0>;
+            #clock-cells = <1>;
+        };
+
+        intc: main-interrupt-ctrl@20200 {
+            compatible = "marvell,orion-intc";
+            interrupt-controller;
+            #interrupt-cells = <1>;
+            reg = <0x20200 0x10>, <0x20210 0x10>;
+        };
+
+        timer: timer@20300 {
+            compatible = "marvell,orion-timer";
+            reg = <0x20300 0x20>;
+            interrupt-parent = <&bridge_intc>;
+            interrupts = <1>, <2>;
+            clocks = <&core_clk 0>;
+        };
+
+        wdt: watchdog-timer@20300 {
+            compatible = "marvell,orion-wdt";
+            reg = <0x20300 0x28>;
+            interrupt-parent = <&bridge_intc>;
+            interrupts = <3>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        ehci@50000 {
+            compatible = "marvell,orion-ehci";
+            reg = <0x50000 0x1000>;
+            interrupts = <23>;
+            clocks = <&gate_clk 3>;
+            status = "okay";
+        };
+
+        eth0: ethernet@74000 {
+            compatible = "marvell,armada-370-neta";
+            reg = <0x74000 0x4000>;
+            interrupts = <11>;
+            clocks = <&gate_clk 19>;
+            status = "disabled";
+        };
+
+        eth1: ethernet@70000 {
+            compatible = "marvell,armada-370-neta";
+            reg = <0x70000 0x4000>;
+            interrupts = <7>;
+            clocks = <&gate_clk 0>;
+            status = "disabled";
+        };
+
+        xor@60800 {
+            compatible = "marvell,orion-xor";
+            reg = <0x60800 0x100
+                   0x60A00 0x100>;
+            status = "okay";
+            clocks = <&gate_clk 8>;
+
+            xor00 {
+                  interrupts = <26>;
+                  dmacap,memcpy;
+                  dmacap,xor;
+            };
+            xor01 {
+                  interrupts = <27>;
+                  dmacap,memcpy;
+                  dmacap,xor;
+                  dmacap,memset;
+            };
+        };
+
+/*
+        xor@60900 {
+            compatible = "marvell,orion-xor";
+            reg = <0x60900 0x100
+                   0x60B00 0x100>;
+            status = "okay";
+            clocks = <&gate_clk 16>;
+
+            xor00 {
+                  interrupts = <7>;
+                  dmacap,memcpy;
+                  dmacap,xor;
+            };
+            xor01 {
+                  interrupts = <8>;
+                  dmacap,memcpy;
+                  dmacap,xor;
+                  dmacap,memset;
+            };
+        };
+*/
+
+        mdio: mdio-bus@72004 {
+            compatible = "marvell,orion-mdio";
+            #address-cells = <1>;
+            #size-cells = <0>;
+            reg = <0x72004 0x84>;
+            interrupts = <4>;
+            clocks = <&gate_clk 0>;
+            status = "disabled";
+            /* add phy nodes in board file */
+        };
+
+        sata_phy0: sata-phy@82000 {
+            compatible = "marvell,mvebu-sata-phy";
+            reg = <0x82000 0x0334>;
+            clocks = <&gate_clk 14>;
+            clock-names = "sata";
+            #phy-cells = <0>;
+            status = "disabled";
+        };
+    };
+};
+
+// SPDX-License-Identifier: GPL-2.0
+/* Copyright (c) 2021, bodhi <mibodhi@gmail.com>
+ *
+ * Based on    
+ *
+ * Hack of kirkwood.dtsi to support a basic Avanta system
+ *
+ * The splits inherited from kirkwood (kirkwood.dtsi, kirkwood-XXXX.dtsi
+ * and kirkwood-board.dts) may not make any sense, since I don't know
+ * the feature differences between the Avanta SoCs.
+ *
+ * Since this is done without aid of a datasheet, things might not
+ * make any sense whatsoever.
+ *
+ *   (c) 2015 Claudio Leite <leitec@staticky.com>
+ *
+ * Values derived from Marvell GPL source release, from Actiontec MI-424WR
+ * source code,
+ *
+ *   Copyright (C) Marvell International Ltd. and its affiliates
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without any
+ * warranty of any kind, whether express or implied.
+ */
+
+/ {
+    mbus {
+        pciec: pcie@82000000 {
+            compatible = "marvell,kirkwood-pcie";
+            status = "disabled";
+            device_type = "pci";
+
+            #address-cells = <3>;
+            #size-cells = <2>;
+
+            bus-range = <0x00 0xff>;
+
+            ranges =
+                   <0x82000000 0 0x40000 MBUS_ID(0xf0, 0x01) 0x40000 0 0x00002000
+                    0x82000000 0 0x44000 MBUS_ID(0xf0, 0x01) 0x44000 0 0x00002000
+                0x82000000 0 0x80000 MBUS_ID(0xf0, 0x01) 0x80000 0 0x00002000
+                0x82000000 0x1 0     MBUS_ID(0x04, 0xe8) 0       1 0 /* Port 0.0 MEM */
+                0x81000000 0x1 0     MBUS_ID(0x04, 0xe0) 0       1 0 /* Port 0.0 IO  */
+                0x82000000 0x2 0     MBUS_ID(0x04, 0xd8) 0       1 0 /* Port 1.0 MEM */
+                0x81000000 0x2 0     MBUS_ID(0x04, 0xd0) 0       1 0 /* Port 1.0 IO  */>;
+
+            pcie0: pcie@1,0 {
+                device_type = "pci";
+                assigned-addresses = <0x82000800 0 0x00040000 0 0x2000>;
+                reg = <0x0800 0 0 0 0>;
+                #address-cells = <3>;
+                #size-cells = <2>;
+                #interrupt-cells = <1>;
+                ranges = <0x82000000 0 0 0x82000000 0x1 0 1 0
+                      0x81000000 0 0 0x81000000 0x1 0 1 0>;
+                interrupt-map-mask = <0 0 0 0>;
+                interrupt-map = <0 0 0 0 &intc 25>;
+                marvell,pcie-port = <0>;
+                marvell,pcie-lane = <0>;
+                clocks = <&gate_clk 2>;
+                status = "disabled";
+            };
+
+            pcie1: pcie@2,0 {
+                device_type = "pci";
+                assigned-addresses = <0x82001000 0 0x00044000 0 0x2000>;
+                reg = <0x1000 0 0 0 0>;
+                #address-cells = <3>;
+                #size-cells = <2>;
+                #interrupt-cells = <1>;
+                ranges = <0x82000000 0 0 0x82000000 0x2 0 1 0
+                      0x81000000 0 0 0x81000000 0x2 0 1 0>;
+                interrupt-map-mask = <0 0 0 0>;
+                interrupt-map = <0 0 0 0 &intc 24>;
+                marvell,pcie-port = <1>;
+                marvell,pcie-lane = <0>;
+                clocks = <&gate_clk 18>;
+                status = "disabled";
+            };
+        };
+    };
+    ocp@f1000000 {
+        pinctrl: pinctrl@18000 {
+            compatible = "marvell,88f6282-pinctrl";
+            reg = <0x18000 0x20>;
+
+            pmx_nand: pmx-nand {
+                marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
+                            "mpp4", "mpp5", "mpp18", "mpp19";
+                marvell,function = "nand";
+            };
+            pmx_sata0: pmx-sata0 {
+                marvell,pins = "mpp5", "mpp21", "mpp23";
+                marvell,function = "sata0";
+            };
+            pmx_spi: pmx-spi {
+                marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3";
+                marvell,function = "spi";
+            };
+            pmx_twsi0: pmx-twsi0 {
+                marvell,pins = "mpp8", "mpp9";
+                marvell,function = "twsi0";
+            };
+            pmx_twsi1: pmx-twsi1 {
+                marvell,pins = "mpp36", "mpp37";
+                marvell,function = "twsi1";
+            };
+            pmx_uart0: pmx-uart0 {
+                marvell,pins = "mpp10", "mpp11";
+                marvell,function = "uart0";
+            };
+            pmx_uart1: pmx-uart1 {
+                marvell,pins = "mpp13", "mpp14";
+                marvell,function = "uart1";
+            };
+            pmx_sdio: pmx-sdio {
+                marvell,pins = "mpp12", "mpp13", "mpp14",
+                           "mpp15", "mpp16", "mpp17";
+                marvell,function = "sdio";
+            };
+        };
+
+        thermal@10078 {
+            compatible = "marvell,kirkwood-thermal";
+            reg = <0x10078 0x4>;
+            status = "okay";
+        };
+
+        rtc@10300 {
+            compatible = "marvell,kirkwood-rtc", "marvell,orion-rtc";
+            reg = <0x10300 0x20>;
+            interrupts = <32>;
+            clocks = <&gate_clk 7>;
+        };
+
+        i2c@11100 {
+            compatible = "marvell,mv64xxx-i2c";
+            reg = <0x11100 0x20>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+            interrupts = <25>;
+            clock-frequency = <100000>;
+            clocks = <&gate_clk 7>;
+            status = "disabled";
+        };
+
+        sata@80000 {
+            compatible = "marvell,orion-sata";
+            reg = <0x80000 0x5000>;
+            interrupts = <22>;
+            clocks = <&gate_clk 14>, <&gate_clk 15>;
+            clock-names = "0", "1";
+            phys = <&sata_phy0>;
+            phy-names = "port0";
+            status = "disabled";
+        };
+
+        mvsdio@90000 {
+            compatible = "marvell,orion-sdio";
+            reg = <0x90000 0x200>;
+            interrupts = <18>;
+            clocks = <&gate_clk 4>;
+            pinctrl-0 = <&pmx_sdio>;
+            pinctrl-names = "default";
+            bus-width = <4>;
+            cap-sdio-irq;
+            cap-sd-highspeed;
+            cap-mmc-highspeed;
+            status = "disabled";
+        };
+    };
+};
+
+
+/ {
+	model = "Actiontec MI424WR-I";
+	compatible = "actiontec,mi424wr-i", "marvell,kirkwood-88f6282", "marvell,kirkwood";
+
+	memory {
+		device_type = "memory";
+		reg = <0x00000000 0x8000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 earlyprintk";
+	};
+
+	ocp@f1000000 {
+/*
+		pinctrl: pinctrl@10000 {
+			pmx_led_white_health: pmx-led-white-health {
+				marvell,pins = "mpp7";
+				marvell,function = "gpo";
+			};
+			pmx_led_white_pulse: pmx-led-white-pulse {
+				marvell,pins = "mpp14";
+				marvell,function = "gpio";
+			};
+			pmx_btn_wps: pmx-btn-wps {
+				marvell,pins = "mpp47";
+				marvell,function = "gpio";
+			};
+			pmx_btn_reset: pmx-btn-reset {
+				marvell,pins = "mpp48";
+				marvell,function = "gpio";
+			};
+		};
+*/
+
+		rtc@10300 {
+			status = "disabled";
+		};
+
+		serial@12000 {
+			status = "okay";
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+/*		
+		power-red {
+			label = "power:red";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+
+		power-gree {
+			label = "power:green";
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb1 {
+			label = "usb1";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+
+		usb2 {
+			label = "usb2";
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		};
+*/
+		wps-red {
+			label = "wps:red";
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		};
+
+		wps-gree {
+			label = "wps:green";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		};
+		
+		internet-red {
+			label = "internet:red";
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		};
+
+		internet-gree {
+			label = "internet:green";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		};
+
+		wan-coax {
+			label = "coax:wan";
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+
+		lan-coax {
+			label = "coax:lan";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+	};
+	
+	gpio_keys {
+		compatible = "gpio-keys";
+		button@1 {
+			label = "wps";
+			linux,code = <0x211>;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+		button@2 {
+			label = "reset";
+			linux,code = <0x198>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			debounce-interval = <100>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+/*
+	pinctrl-0 = <&pmx_nand_none>;
+	pinctrl-names = "default";
+*/
+
+	partition@0 {
+		label = "u-boot";
+		reg = <0 0x200000>;
+	};
+
+	partition@200000 {
+		label = "jffs2";
+		reg = <0x200000 0x2000000>;
+	};
+
+
+	partition@3000000 {
+		label = "firmware";
+		reg = <0x3000000 0x5000000>;
+	};
+};
+
+&pciec {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	switch@9 {
+		compatible = "marvell,mv88e6085";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <9>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "ethernet1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "ethernet2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "ethernet3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "ethernet4";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "internet";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu";
+				ethernet = <&eth0port>;
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+/* eth0 is connected to a Marvell 88E6171 switch, without a PHY. So set
+ * fixed speed and duplex.
+ */
+&eth0 {
+	status = "okay";
+	eth0port: ethernet0-port@0 {
+		speed = <1000>;
+		duplex = <1>;
+	};
+};
+
+&eth1 {
+        status = "okay";
+};
+
