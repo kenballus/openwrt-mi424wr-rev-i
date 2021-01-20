@@ -4,6 +4,7 @@ OpenWrt snapshot for the Actiontec MI424WR Rev. I
 To try running this, you're going to need to take the case off of your router and connect to the UART.
 Then, get into U-Boot by sending any keystroke over the UART as the router boots.
 Next, set up a tftp server on your computer, and put `openwrt-kirkwood-actiontec_mi424wr-initramfs-uImage` in its root.
+Set a static IP address of 192.168.1.10 on that tftp server.
 Finally, you can connect your computer to the router via ethernet, and run `tftpboot openwrt-kirkwood-actiontec_mi424wr-initramfs-uImage; bootm`.
 You should then boot into OpenWrt.
 
