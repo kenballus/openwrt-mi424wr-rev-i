@@ -10,7 +10,7 @@ You should then boot into OpenWrt.
 
 I haven't tried flashing to the NAND, but the other images should be sufficient for giving that a try, if you're feeling lucky.
 Since this router has a native telnet interface, you may have some success flashing this to the nand through something like `mtd`.
-I have not tried doing that, so if you have success with it, let me know.
+I have not tried doing that, so if you have success with it, let me know. There could also be a way to set U-Boot variables from the telnet prompt, which would eliminate the need to open up the router.
 
 To build these images for yourself, follow [this guide](https://openwrt.org/docs/guide-developer/quickstart-build-images), but before you run `make menuconfig`, put `kirkwood-mi424wr.dts` in `target/linux/kirkwood/files-5.4/arch/arm/boot/dts/`, and add the following to `target/linux/kirkwood/image/Makefile` just below the last target (which is the ZyXEL NSA325, for now):
 
