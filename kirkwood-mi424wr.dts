@@ -22,16 +22,6 @@
 /* Copyright (c) 2021, bodhi <mibodhi@gmail.com>
  *
  * Based on
- *
- * Hack of kirkwood.dtsi to support a basic Avanta system
- *
- * The splits inherited from kirkwood (kirkwood.dtsi, kirkwood-XXXX.dtsi
- * and kirkwood-board.dts) may not make any sense, since I don't know
- * the feature differences between the Avanta SoCs.
- *
- * Since this is done without aid of a datasheet, things might not
- * make any sense whatsoever.
- *
  *   (c) 2015 Claudio Leite <leitec@staticky.com>
  *
  * Values derived from Marvell GPL source release, from Actiontec MI-424WR
@@ -86,16 +76,6 @@
         pcie-mem-aperture = <0xf3000000 0x1000000>; /* 16 MiB memory space */
         pcie-io-aperture  = <0xf2000000 0x100000>;   /*   1 MiB    I/O space */
 
-        crypto@0301 {
-            compatible = "marvell,orion-crypto";
-            reg = <MBUS_ID(0xf0, 0x01) 0x30000 0x10000>,
-                  <MBUS_ID(0x03, 0x01) 0 0x800>;
-            reg-names = "regs", "sram";
-            interrupts = <22>;
-            clocks = <&gate_clk 17>;
-            status = "okay";
-        };
-
         nand: nand@012f {
             #address-cells = <1>;
             #size-cells = <1>;
@@ -109,6 +89,15 @@
             clocks = <&gate_clk 7>;
             status = "disabled";
         };
+
+/*      crypto_sram: sa-sram@301 {
+            compatible = "mmio-sram";
+            reg = <MBUS_ID(0x03, 0x01) 0x0 0x800>;
+            clocks = <&gate_clk 17>;
+            #address-cells = <1>;
+            #size-cells = <1>;
+        };
+*/
     };
 
     ocp@f1000000 {
@@ -123,7 +112,7 @@
             #clock-cells = <1>;
         };
 
-        spi@10600 {
+        spi0: spi@10600 {
             compatible = "marvell,orion-spi";
             #address-cells = <1>;
             #size-cells = <0>;
@@ -131,6 +120,8 @@
             interrupts = <19>;
             reg = <0x10600 0x28>;
             clocks = <&gate_clk 7>;
+            pinctrl-0 = <&pmx_spi>;
+            pinctrl-names = "default";
             status = "disabled";
         };
 
@@ -160,7 +151,7 @@
         };
 */
 
-        i2c@11000 {
+        i2c0: i2c@11000 {
             compatible = "marvell,mv64xxx-i2c";
             reg = <0x11000 0x20>;
             #address-cells = <1>;
@@ -171,7 +162,7 @@
             status = "disabled";
         };
 
-        serial@12000 {
+        uart0: serial@12000 {
             compatible = "ns16550a";
             reg = <0x12000 0x100>;
             reg-shift = <2>;
@@ -180,7 +171,7 @@
             status = "disabled";
         };
 
-        serial@12100 {
+        uart1: serial@12100 {
             compatible = "ns16550a";
             reg = <0x12100 0x100>;
             reg-shift = <2>;
@@ -192,6 +183,11 @@
         mbusc: mbus-controller@20000 {
             compatible = "marvell,mbus-controller";
             reg = <0x20000 0x80>, <0x1500 0x20>;
+        };
+
+        sysc: system-controller@20000 {
+            compatible = "marvell,orion-system-controller";
+            reg = <0x20000 0x120>;
         };
 
         bridge_intc: bridge-interrupt-ctrl@20110 {
@@ -210,7 +206,12 @@
             #clock-cells = <1>;
         };
 
-        intc: main-interrupt-ctrl@20200 {
+        l2: l2-cache@20128 {
+            compatible = "marvell,kirkwood-cache";
+            reg = <0x20128 0x4>;
+        };
+
+        intc: interrupt-controller@20200 {
             compatible = "marvell,orion-intc";
             interrupt-controller;
             #interrupt-cells = <1>;
@@ -234,7 +235,18 @@
             status = "disabled";
         };
 
-        ehci@50000 {
+/*      cesa: crypto@30000 {
+            compatible = "marvell,kirkwood-crypto";
+            reg = <0x30000 0x10000>;
+            reg-names = "regs";
+            interrupts = <22>;
+            clocks = <&gate_clk 17>;
+            marvell,crypto-srams = <&crypto_sram>;
+            marvell,crypto-sram-size = <0x800>;
+            status = "okay";
+        };
+*/
+        usb0: ehci@50000 {
             compatible = "marvell,orion-ehci";
             reg = <0x50000 0x1000>;
             interrupts = <23>;
@@ -258,7 +270,7 @@
             status = "disabled";
         };
 
-        xor@60800 {
+        dma0: xor@60800 {
             compatible = "marvell,orion-xor";
             reg = <0x60800 0x100
                    0x60A00 0x100>;
@@ -278,8 +290,7 @@
             };
         };
 
-/*
-        xor@60900 {
+/*      dma1: xor@60900 {
             compatible = "marvell,orion-xor";
             reg = <0x60900 0x100
                    0x60B00 0x100>;
@@ -299,7 +310,6 @@
             };
         };
 */
-
         mdio: mdio-bus@72004 {
             compatible = "marvell,orion-mdio";
             #address-cells = <1>;
@@ -326,16 +336,6 @@
 /* Copyright (c) 2021, bodhi <mibodhi@gmail.com>
  *
  * Based on    
- *
- * Hack of kirkwood.dtsi to support a basic Avanta system
- *
- * The splits inherited from kirkwood (kirkwood.dtsi, kirkwood-XXXX.dtsi
- * and kirkwood-board.dts) may not make any sense, since I don't know
- * the feature differences between the Avanta SoCs.
- *
- * Since this is done without aid of a datasheet, things might not
- * make any sense whatsoever.
- *
  *   (c) 2015 Claudio Leite <leitec@staticky.com>
  *
  * Values derived from Marvell GPL source release, from Actiontec MI-424WR
@@ -594,6 +594,52 @@
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		};
 	};
+	dsa {
+		status = "disabled";
+
+		compatible = "marvell,dsa";
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		dsa,ethernet = <&eth0port>;
+		dsa,mii-bus = <&mdio>;
+
+		switch@8,0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <8 0>;	/* MDIO address 8, switch 0 in tree */
+
+			port@0 {
+				reg = <0>;
+				label = "ethernet1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "ethernet2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "ethernet3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "ethernet4";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "internet";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu";
+			};
+		};
+	};
 	
 	gpio_keys {
 		compatible = "gpio-keys";
@@ -647,11 +693,11 @@
 &mdio {
 	status = "okay";
 
-	switch@9 {
+	switch@8 {
 		compatible = "marvell,mv88e6085";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <9>;
+		reg = <8>;
 
 		ports {
 			#address-cells = <1>;
@@ -693,6 +739,11 @@
 			};
 		};
 	};
+
+	phy0: ethernet-phy@9 {
+		reg = <9>;
+	};
+
 };
 
 /* eth0 is connected to a Marvell 88E6171 switch, without a PHY. So set
@@ -700,13 +751,18 @@
  */
 &eth0 {
 	status = "okay";
+	phy-mode = "gmii";
 	eth0port: ethernet0-port@0 {
 		speed = <1000>;
 		duplex = <1>;
 	};
 };
 
+/*    */
 &eth1 {
         status = "okay";
+	phy = <&phy0>;
+	phy-mode = "rgmii-id";
+
 };
 
