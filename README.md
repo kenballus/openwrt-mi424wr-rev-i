@@ -32,6 +32,7 @@ You should be able to follow the guide from there, and your images will be in `b
 
 KNOWN BUGS:
   * Ethernet doesn't work.
+  * Crypto hardware doesn't work, resulting in warnings about random number generation.
 
 If you find any other bugs, please let me know.
 
