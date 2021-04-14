@@ -1,22 +1,23 @@
 # openwrt-mi424wr-rev-i
 OpenWrt snapshot for the Actiontec MI424WR Rev. I
 
+NOTICE: There are 2 models of the Actiontec MI424WR Rev. I. One uses stock firmware versions 4x.xx and the other uses 5x.xx. This build is for the 4x model; it is untested on the 5x model.
+
 To try running this, you're going to need to take the case off of your router and connect to the UART.
 The UART pins are populated for you, so no soldering necessary.
 The pin closest to the back of the router is ground, with TX next to it, and RX next to that.
 Then, enter U-Boot by sending any keystroke over the UART as the router boots.
 Next, set up a tftp server, and put `openwrt-kirkwood-actiontec_mi424wr-initramfs-uImage` in its root.
-Set a static IP address of 192.168.1.10 on the computer running the server.
+Set a static IP address of 192.168.1.10 on the server.
 Finally, connect the tftp server to the router via ethernet, and run `tftpboot openwrt-kirkwood-actiontec_mi424wr-initramfs-uImage; bootm`.
 You should then boot into OpenWrt.
 
-I haven't tried flashing to the NAND, but the other images should be sufficient for giving that a try, if you're feeling lucky.
-Since this router has a native telnet interface, you may have some success flashing this to the nand through something like `mtd`.
-I have not tried doing that, so if you have success with it, let me know.
-There could also be a way to set U-Boot variables from the telnet prompt, which would eliminate the need to open up the router.
-You can also set up usb booting if you don't feel like doing tftp.
+Since this router has a native telnet interface, so it may be possible to set U-Boot variables from the telnet prompt, which would eliminate the need to open up the router.
+You can also set up usb booting if you don't feel like tftp.
+This allows for a persistent enough operating system without potentially bricking the router by flashing to the NAND.
+Although if your router does get bricked, it does support kwboot, so all hope is not lost.
 
-To build these images for yourself, follow [this guide](https://openwrt.org/docs/guide-developer/quickstart-build-images), but before you run `make menuconfig`, put `kirkwood-mi424wr.dts` in `target/linux/kirkwood/files-5.4/arch/arm/boot/dts/`, and add the following to `target/linux/kirkwood/image/Makefile` where all the other devices are listed:
+To build these images for yourself, follow [this guide](https://openwrt.org/docs/guide-developer/quickstart-build-images), but before you run `make menuconfig`, put `kirkwood-mi424wr.dts` in `target/linux/kirkwood/files/arch/arm/boot/dts/`, and add the following to `target/linux/kirkwood/image/Makefile` where all the other devices are listed:
 
 ```make
 define Device/actiontec_mi424wr
@@ -32,7 +33,7 @@ You should be able to follow the guide from there, and your images will be in `b
 
 KNOWN BUGS:
   * Ethernet doesn't work.
-  * Crypto hardware doesn't work, resulting in warnings about random number generation.
+  * Crypto hardware doesn't work.
 
 If you find any other bugs, please let me know.
 
