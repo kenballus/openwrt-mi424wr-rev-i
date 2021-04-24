@@ -12,7 +12,7 @@ Set a static IP address of 192.168.1.10 on the server.
 Finally, connect the tftp server to the router via ethernet, and run `tftpboot openwrt-kirkwood-actiontec_mi424wr-initramfs-uImage; bootm`.
 You should then boot into OpenWrt.
 
-Since this router has a native telnet interface, so it may be possible to set U-Boot variables from the telnet prompt, which would eliminate the need to open up the router.
+This router has a native telnet interface, so it may be possible to set U-Boot variables from the telnet prompt, which would eliminate the need to open up the router.
 You can also set up usb booting if you don't feel like tftp.
 This allows for a persistent enough operating system without potentially bricking the router by flashing to the NAND.
 Although if your router does get bricked, it does support kwboot, so all hope is not lost.
