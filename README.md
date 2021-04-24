@@ -42,3 +42,8 @@ I may at some point decide to host a repository of kmods, but for now you're goi
 
 Big, BIG thanks to bodhi at forum.doozan.com.
 They did all the real work; all I did was stick the dts in the OpenWrt build system and compile.
+
+## What's the point of running OpenWrt if ethernet doesn't work?
+
+NAS. Fun. Not sure if there are more reasons.
+
